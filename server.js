@@ -2,8 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
-const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
+const TELEGRAM_BOT_TOKEN = '7749604293:AAHlRr16NUJPHRiQ4QqbRkMKQMzVqFDrUCw';
+const TELEGRAM_CHAT_ID = '7064862085';
 
 const sendToTelegram = (message) => {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
